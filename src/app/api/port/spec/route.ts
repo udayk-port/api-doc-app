@@ -8,8 +8,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { fetchSpecFromUrl } from '@/services/portService';
 
 // Limits to prevent browser crashes from large specs
-const MAX_PATHS = 500;
-const MAX_SIZE_MB = 2; // Max spec size in megabytes
+// Stoplight Elements handles larger specs better than Redoc
+const MAX_PATHS = 1000;
+const MAX_SIZE_MB = 5; // Max spec size in megabytes
 
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
@@ -26,7 +27,7 @@ export async function GET(request: NextRequest) {
     console.log(`[API] Fetching spec from: ${specUrl}`);
     const schema = await fetchSpecFromUrl(specUrl);
     
-    // Check spec size - very large specs can crash Redoc
+    // Check spec size - very large specs can impact performance
     const pathCount = Object.keys(schema.paths || {}).length;
     const specJson = JSON.stringify(schema);
     const sizeMB = specJson.length / (1024 * 1024);
