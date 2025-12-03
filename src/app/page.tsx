@@ -186,68 +186,62 @@ export default function Home() {
           <AuthBar />
         )}
         
-        {/* Header */}
-        <header className="bg-slate-900 border-b border-slate-700 px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-xl font-semibold text-white">
-                {loadedSchema?.info.title || selectedService?.service.title || 'API Documentation'}
-              </h1>
-              <p className="text-sm text-slate-400 mt-1">
-                {loadedSchema?.info.description || 
-                 (selectedService ? `API documentation for ${selectedService.service.title}` : 'Select a service to view its API documentation')}
-              </p>
-            </div>
-            <div className="flex items-center gap-4">
-              {loadedSchema && (
-                <span className="px-3 py-1 bg-blue-600/20 text-blue-400 text-sm rounded-full">
-                  v{loadedSchema.info.version}
-                </span>
-              )}
-              <button
-                onClick={fetchServiceMetadata}
-                className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors"
-                title="Refresh"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                </svg>
-              </button>
-            </div>
-          </div>
-
-          {/* Service Info with Blueprint context */}
-          {selectedService && (
-            <div className="flex items-center gap-4 mt-4">
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-slate-500">Blueprint:</span>
-                <span className="text-sm text-cyan-400 font-medium">{selectedService.sourceLabel}</span>
-              </div>
+        {/* Minimal Top Bar - only show when a service is selected */}
+        {selectedService && (
+          <div className="bg-slate-900/50 border-b border-slate-800 px-4 py-2 flex items-center justify-between">
+            <div className="flex items-center gap-3 text-sm">
+              <span className="text-slate-500">Blueprint:</span>
+              <span className="text-cyan-400 font-medium">{selectedService.sourceLabel}</span>
               {selectedService.specUrl && (
                 <>
-                  <span className="text-slate-600">|</span>
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm text-slate-500">Spec:</span>
-                    <a
-                      href={selectedService.specUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-sm text-blue-400 hover:underline truncate max-w-sm"
-                    >
-                      {selectedService.specUrl}
-                    </a>
-                  </div>
+                  <span className="text-slate-700">|</span>
+                  <a
+                    href={selectedService.specUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-400 hover:underline truncate max-w-xs"
+                    title={selectedService.specUrl}
+                  >
+                    View spec ↗
+                  </a>
                 </>
               )}
               {selectedService.embeddedSpec && !selectedService.specUrl && (
                 <>
-                  <span className="text-slate-600">|</span>
-                  <span className="text-sm text-slate-500">Embedded spec</span>
+                  <span className="text-slate-700">|</span>
+                  <span className="text-slate-500">Embedded spec</span>
                 </>
               )}
             </div>
-          )}
-        </header>
+            <button
+              onClick={fetchServiceMetadata}
+              className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded transition-colors"
+              title="Refresh API list"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+            </button>
+          </div>
+        )}
+
+        {/* Empty state header - when no service selected */}
+        {!selectedService && (
+          <div className="bg-slate-900/50 border-b border-slate-800 px-4 py-2 flex items-center justify-between">
+            <div className="text-sm text-slate-400">
+              Select a service to view its API documentation
+            </div>
+            <button
+              onClick={fetchServiceMetadata}
+              className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded transition-colors"
+              title="Refresh API list"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+            </button>
+          </div>
+        )}
 
         {/* API Documentation Viewer */}
         <div className="flex-1 relative overflow-hidden">
@@ -315,10 +309,11 @@ export default function Home() {
               </div>
             </div>
           ) : loadedSchema ? (
-            // Key prop forces Redoc to unmount/remount cleanly when switching APIs
+            // Key prop forces Elements to unmount/remount cleanly when switching APIs
             <ApiDocViewer 
               key={`${selectedService.blueprintId}-${selectedService.service.identifier}`}
-              spec={loadedSchema} 
+              spec={loadedSchema}
+              specUrl={selectedService.specUrl}
             />
           ) : null}
         </div>

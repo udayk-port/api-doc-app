@@ -18,14 +18,49 @@ function SourceGroup({
   selectedService,
   onServiceSelect,
   defaultExpanded = true,
+  isCollapsed = false,
 }: {
   label: string;
   services: ServiceMetadata[];
   selectedService: ServiceMetadata | null;
   onServiceSelect: (service: ServiceMetadata | null) => void;
   defaultExpanded?: boolean;
+  isCollapsed?: boolean;
 }) {
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
+
+  // In collapsed mode, show only icons/badges
+  if (isCollapsed) {
+    return (
+      <div className="mb-2">
+        <div className="flex flex-col items-center gap-1">
+          {services.slice(0, 5).map((service) => {
+            const isSelected = 
+              selectedService?.service.identifier === service.service.identifier &&
+              selectedService?.blueprintId === service.blueprintId;
+            
+            return (
+              <button
+                key={`${service.blueprintId}-${service.service.identifier}`}
+                onClick={() => onServiceSelect(service)}
+                title={service.service.title}
+                className={`w-10 h-10 rounded-md flex items-center justify-center text-xs font-bold transition-colors ${
+                  isSelected
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-slate-800/50 text-slate-400 hover:bg-slate-700'
+                }`}
+              >
+                {service.service.title.substring(0, 2).toUpperCase()}
+              </button>
+            );
+          })}
+          {services.length > 5 && (
+            <div className="text-xs text-slate-500 mt-1">+{services.length - 5}</div>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="mb-2">
@@ -97,6 +132,7 @@ export default function Sidebar({
   selectedService,
 }: SidebarProps) {
   const [searchTerm, setSearchTerm] = useState('');
+  const [isCollapsed, setIsCollapsed] = useState(false);
 
   // Filter services based on search term across all groups
   const filteredGrouped = useMemo(() => {
@@ -123,11 +159,75 @@ export default function Sidebar({
   const filteredLabels = Object.keys(filteredGrouped);
   const totalCount = services.length;
 
+  // Collapsed sidebar view
+  if (isCollapsed) {
+    return (
+      <aside className="w-16 bg-slate-900 border-r border-slate-700 h-full flex flex-col transition-all duration-300">
+        {/* Expand Button */}
+        <div className="p-2 border-b border-slate-700 flex justify-center">
+          <button
+            onClick={() => setIsCollapsed(false)}
+            className="p-2 rounded-md bg-slate-800 hover:bg-slate-700 transition-colors"
+            title="Expand sidebar"
+          >
+            <svg
+              className="w-5 h-5 text-slate-400"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7M5 5l7 7-7 7" />
+            </svg>
+          </button>
+        </div>
+
+        {/* API Count Badge */}
+        <div className="p-2 flex justify-center">
+          <div className="bg-blue-600 text-white text-xs font-bold rounded-full w-8 h-8 flex items-center justify-center" title={`${totalCount} APIs`}>
+            {totalCount}
+          </div>
+        </div>
+
+        {/* Collapsed Groups */}
+        <nav className="flex-1 overflow-y-auto p-2 flex flex-col items-center">
+          {filteredLabels.map((label, index) => (
+            <SourceGroup
+              key={label}
+              label={label}
+              services={filteredGrouped[label]}
+              selectedService={selectedService}
+              onServiceSelect={onServiceSelect}
+              defaultExpanded={index === 0}
+              isCollapsed={true}
+            />
+          ))}
+        </nav>
+      </aside>
+    );
+  }
+
+  // Expanded sidebar view
   return (
-    <aside className="w-72 bg-slate-900 border-r border-slate-700 h-full flex flex-col">
+    <aside className="w-72 bg-slate-900 border-r border-slate-700 h-full flex flex-col transition-all duration-300">
       {/* Header */}
       <div className="p-4 border-b border-slate-700">
-        <h2 className="text-lg font-semibold text-white mb-1">API Documentation</h2>
+        <div className="flex items-center justify-between mb-1">
+          <h2 className="text-lg font-semibold text-white">API Documentation</h2>
+          <button
+            onClick={() => setIsCollapsed(true)}
+            className="p-1.5 rounded-md bg-slate-800 hover:bg-slate-700 transition-colors"
+            title="Collapse sidebar"
+          >
+            <svg
+              className="w-4 h-4 text-slate-400"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
+            </svg>
+          </button>
+        </div>
         <p className="text-xs text-slate-500 mb-3">
           {sourceLabels.length} source{sourceLabels.length !== 1 ? 's' : ''} · {totalCount} API{totalCount !== 1 ? 's' : ''}
         </p>
@@ -186,6 +286,7 @@ export default function Sidebar({
               selectedService={selectedService}
               onServiceSelect={onServiceSelect}
               defaultExpanded={index === 0} // First group expanded by default
+              isCollapsed={false}
             />
           ))
         )}

@@ -34,198 +34,701 @@ body {
   background: #64748b;
 }
 
-/* Redoc customizations */
-.redoc-container {
-  background: #0f172a !important;
+/* ========================================
+   Stoplight Elements Dark Theme Overrides
+   High Contrast & Readable Design
+   ======================================== */
+
+/* Root container - force dark everywhere */
+.elements-container,
+.elements-container *,
+.elements-container *::before,
+.elements-container *::after {
+  --color-canvas-pure: #0f172a !important;
+  --color-canvas: #0f172a !important;
+  --color-canvas-50: #1e293b !important;
+  --color-canvas-100: #1e293b !important;
+  --color-canvas-200: #334155 !important;
+  --color-canvas-300: #475569 !important;
+  --color-text: #f1f5f9 !important;
+  --color-text-heading: #ffffff !important;
+  --color-text-paragraph: #e2e8f0 !important;
+  --color-text-muted: #94a3b8 !important;
+  --color-text-light: #64748b !important;
+  --color-border: #475569 !important;
+  --color-primary: #60a5fa !important;
+  --color-primary-light: #93c5fd !important;
+  --color-primary-dark: #3b82f6 !important;
 }
 
-/* Override Redoc styles for better integration */
-.redoc-container .menu-content {
-  background: #0f172a !important;
+/* Force dark background on everything */
+.elements-container,
+.elements-container > div,
+.elements-container > div > div {
+  background-color: #0f172a !important;
+  color: #f1f5f9 !important;
 }
 
-.redoc-container .api-content {
-  background: #1e293b !important;
-}
-
-/* Fix code block backgrounds */
-.redoc-container pre {
-  background: #0f172a !important;
-}
-
-.redoc-container code {
-  background: #1e293b !important;
-}
-
-/* Method badges */
-.redoc-container .http-verb,
-.redoc-container [class*="operation-type"] {
-  font-weight: 600;
-  text-transform: uppercase;
-  display: inline-flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  vertical-align: middle !important;
-  min-height: 1.5em !important;
-  line-height: 1 !important;
-}
-
-/* Search highlight */
-.redoc-container mark {
-  background: rgba(34, 211, 238, 0.3);
-  color: inherit;
-}
-
-/* Response panel */
-.redoc-container .react-tabs__tab--selected {
-  background: #334155 !important;
-  border-color: #22d3ee !important;
-}
-
-/* Redoc layout - fixed menu, scrolling content */
-.redoc-container {
+/* ===== LAYOUT FIXES FOR SCROLLING ===== */
+/* Main Elements wrapper - fixed height container */
+.elements-container {
+  width: 100% !important;
   height: 100% !important;
-  overflow: hidden !important;
-  display: flex !important;
-  flex-direction: column !important;
-}
-
-.redoc-wrap {
-  height: 100% !important;
-  flex: 1 !important;
-  display: flex !important;
+  min-height: 0 !important;
   overflow: hidden !important;
 }
 
-/* Left menu - fixed with its own scroll */
-.redoc-wrap .menu-content {
-  position: relative !important;
-  height: 100% !important;
+/* All containers in the hierarchy need min-height: 0 for flex scrolling */
+.elements-container > *,
+.elements-container > * > *,
+.elements-container > * > * > * {
+  min-height: 0 !important;
+}
+
+/* Main content panel - THE key scrollable element */
+.elements-container .sl-overflow-y-auto {
   overflow-y: auto !important;
-  overflow-x: hidden !important;
-  flex-shrink: 0 !important;
+  -webkit-overflow-scrolling: touch !important;
 }
 
-/* Main content wrapper - scrollable */
-.redoc-wrap .api-content {
-  flex: 1 !important;
-  height: 100% !important;
+/* Ensure main content has proper scroll container */
+.elements-container .sl-flex-1.sl-w-full.sl-bg-canvas {
   overflow-y: auto !important;
-  overflow-x: hidden !important;
-  scroll-behavior: smooth !important;
+  min-height: 0 !important;
+  height: 100% !important;
 }
 
-/* Ensure content sections don't block scrolling */
-.redoc-wrap .api-info,
-.redoc-wrap [class*="operation-"],
-.redoc-wrap [class*="middle-panel"],
-.redoc-wrap [class*="right-panel"] {
-  height: auto !important;
-  min-height: auto !important;
-  overflow: visible !important;
+/* Fix inner content to not exceed bounds */
+.elements-container .sl-stack--vertical {
+  min-height: 0 !important;
 }
 
-/* Section containers should expand */
-.redoc-wrap section,
-.redoc-wrap [data-section-id] {
-  height: auto !important;
-  overflow: visible !important;
+/* Headings - prevent overflow */
+.elements-container h1,
+.elements-container h2,
+.elements-container h3 {
+  word-break: break-word !important;
+  overflow-wrap: break-word !important;
+  max-width: 100% !important;
 }
 
-/* Code blocks should scroll horizontally */
-.redoc-wrap pre {
+/* Schema/Model container - responsive */
+.elements-container [class*="Model"],
+.elements-container [class*="Schema"],
+.elements-container [class*="JsonSchema"] {
+  max-width: 100% !important;
   overflow-x: auto !important;
-  overflow-y: visible !important;
 }
 
-/* Security/Authorization badges - high contrast */
-.redoc-wrap [class*="security-"] span,
-.redoc-wrap [class*="security-"],
-.redoc-wrap [class*="SecurityRequirement"],
-.redoc-wrap [class*="ejNTPo"],
-.redoc-wrap [class*="authorization"] {
-  color: #fbbf24 !important; /* amber-400 */
-  background-color: rgba(251, 191, 36, 0.15) !important;
-  border-color: #fbbf24 !important;
+/* Two-column layout for content + example - don't force wrap */
+.elements-container [class*="sl-flex"]:not([class*="sl-flex-col"]) {
+  flex-wrap: nowrap !important;
 }
 
-/* Expandable section headers */
-.redoc-wrap [class*="FtowP"],
-.redoc-wrap svg[class*="sc-"] {
-  color: #94a3b8 !important; /* slate-400 */
-  fill: currentColor !important;
+/* Example panel - flexible width */
+.elements-container [class*="TryIt"],
+.elements-container [class*="Example"],
+.elements-container [class*="RequestSamples"] {
+  min-width: 280px !important;
+  max-width: 400px !important;
+  flex: 0 0 auto !important;
+  overflow-y: auto !important;
 }
 
-/* Scope badges (read:pets, write:pets) */
-.redoc-wrap [class*="scope"],
-.redoc-wrap [class*="Scope"] {
-  color: #4ade80 !important; /* green-400 */
-  background-color: rgba(74, 222, 128, 0.15) !important;
-  padding: 2px 6px !important;
-  border-radius: 4px !important;
-  margin: 0 2px !important;
+/* ===== LEFT SIDEBAR ===== */
+.elements-container [class*="TableOfContents"],
+.elements-container [class*="sidebar"],
+.elements-container [class*="Sidebar"],
+.elements-container [class*="TocPanel"],
+.elements-container [class*="sl-panel"],
+.elements-container [class*="Panel"]:first-child {
+  background-color: #0f172a !important;
+  border-right: 1px solid #334155 !important;
 }
 
-/* Labels and badges */
-.redoc-wrap label,
-.redoc-wrap [class*="label"] {
-  color: #e2e8f0 !important; /* slate-200 */
+/* All text in sidebar - high contrast */
+.elements-container [class*="TableOfContents"] *,
+.elements-container [class*="sidebar"] *,
+.elements-container [class*="TocPanel"] * {
+  color: #f1f5f9 !important;
 }
 
-/* Required field indicator */
-.redoc-wrap [class*="required"] {
-  color: #f87171 !important; /* red-400 */
+/* Navigation items */
+.elements-container [class*="TableOfContents"] a,
+.elements-container [class*="TableOfContents"] button,
+.elements-container nav a,
+.elements-container nav button {
+  color: #e2e8f0 !important;
+  background-color: transparent !important;
 }
 
-/* Type labels */
-.redoc-wrap [class*="type-"],
-.redoc-wrap [class*="Type"] {
-  color: #38bdf8 !important; /* sky-400 */
+.elements-container [class*="TableOfContents"] a:hover,
+.elements-container [class*="TableOfContents"] button:hover,
+.elements-container nav a:hover,
+.elements-container nav button:hover {
+  color: #60a5fa !important;
+  background-color: #1e293b !important;
 }
 
-/* Property names */
-.redoc-wrap [class*="property-name"],
-.redoc-wrap [class*="PropertyName"] {
-  color: #f1f5f9 !important; /* slate-100 */
+/* Active/selected nav item */
+.elements-container [class*="TableOfContents"] a[aria-current="page"],
+.elements-container [class*="TableOfContents"] [class*="active"],
+.elements-container nav [class*="active"] {
+  color: #60a5fa !important;
+  background-color: #1e293b !important;
+  border-left: 3px solid #60a5fa !important;
+}
+
+/* Group headers in sidebar */
+.elements-container [class*="group-title"],
+.elements-container [class*="GroupTitle"],
+.elements-container [class*="section-title"] {
+  color: #94a3b8 !important;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+}
+
+/* ===== MAIN CONTENT AREA ===== */
+.elements-container [class*="Article"],
+.elements-container article,
+.elements-container main,
+.elements-container [class*="sl-prose"] {
+  background-color: #0f172a !important;
+  color: #f1f5f9 !important;
+}
+
+/* Content panels/cards */
+.elements-container [class*="Panel"],
+.elements-container [class*="Card"],
+.elements-container [class*="Box"] {
+  background-color: #1e293b !important;
+  border-color: #475569 !important;
+}
+
+/* Headings - BRIGHT WHITE */
+.elements-container h1,
+.elements-container h2,
+.elements-container h3,
+.elements-container h4,
+.elements-container h5,
+.elements-container h6,
+.elements-container [class*="Heading"],
+.elements-container [class*="Title"] {
+  color: #ffffff !important;
+  font-weight: 600 !important;
+}
+
+/* Paragraphs and text - HIGH CONTRAST */
+.elements-container p,
+.elements-container li,
+.elements-container [class*="Description"],
+.elements-container [class*="prose"],
+.elements-container span {
+  color: #e2e8f0 !important;
+}
+
+/* Labels - VERY VISIBLE */
+.elements-container label,
+.elements-container [class*="Label"],
+.elements-container [class*="label"] {
+  color: #ffffff !important;
   font-weight: 500 !important;
+  font-size: 0.875rem !important;
 }
 
-/* Expandable arrows */
-.redoc-wrap button svg,
-.redoc-wrap [class*="expand"] svg {
+/* Muted text - still readable */
+.elements-container [class*="muted"],
+.elements-container [class*="Muted"],
+.elements-container small {
   color: #94a3b8 !important;
 }
 
-/* Tables */
-.redoc-wrap table {
-  border-color: #334155 !important; /* slate-700 */
+/* Links */
+.elements-container a:not([class*="nav"]):not([class*="sidebar"]) {
+  color: #60a5fa !important;
 }
 
-.redoc-wrap th {
-  background-color: #1e293b !important; /* slate-800 */
-  color: #f1f5f9 !important; /* slate-100 */
+.elements-container a:hover {
+  color: #93c5fd !important;
 }
 
-.redoc-wrap td {
-  color: #e2e8f0 !important; /* slate-200 */
-  border-color: #334155 !important;
+/* ===== HTTP METHOD BADGES ===== */
+.elements-container [class*="HttpMethod"],
+.elements-container [class*="http-method"],
+.elements-container [class*="MethodBadge"],
+.elements-container [class*="operation-type"] {
+  font-weight: 700 !important;
+  padding: 4px 10px !important;
+  border-radius: 4px !important;
+  font-size: 0.75rem !important;
+  letter-spacing: 0.05em !important;
 }
 
-/* Description text */
-.redoc-wrap p,
-.redoc-wrap [class*="description"] {
-  color: #cbd5e1 !important; /* slate-300 */
+/* GET - Bright Green */
+.elements-container [class*="get" i]:not(input):not(button):not([class*="target"]),
+.elements-container [data-method="get"] {
+  background-color: rgba(34, 197, 94, 0.25) !important;
+  color: #4ade80 !important;
+  border: 1px solid #22c55e !important;
 }
 
-/* Headings in content */
-.redoc-wrap h1, .redoc-wrap h2, .redoc-wrap h3, 
-.redoc-wrap h4, .redoc-wrap h5, .redoc-wrap h6 {
-  color: #f8fafc !important; /* slate-50 */
+/* POST - Bright Blue */
+.elements-container [class*="post" i]:not(input):not(button),
+.elements-container [data-method="post"] {
+  background-color: rgba(59, 130, 246, 0.25) !important;
+  color: #60a5fa !important;
+  border: 1px solid #3b82f6 !important;
+}
+
+/* PUT - Bright Amber */
+.elements-container [class*="put" i]:not(input):not(button),
+.elements-container [data-method="put"] {
+  background-color: rgba(245, 158, 11, 0.25) !important;
+  color: #fbbf24 !important;
+  border: 1px solid #f59e0b !important;
+}
+
+/* PATCH - Bright Orange */
+.elements-container [class*="patch" i]:not(input):not(button),
+.elements-container [data-method="patch"] {
+  background-color: rgba(249, 115, 22, 0.25) !important;
+  color: #fb923c !important;
+  border: 1px solid #f97316 !important;
+}
+
+/* DELETE - Bright Red */
+.elements-container [class*="delete" i]:not(input):not(button),
+.elements-container [data-method="delete"] {
+  background-color: rgba(239, 68, 68, 0.25) !important;
+  color: #f87171 !important;
+  border: 1px solid #ef4444 !important;
+}
+
+/* ===== CODE BLOCKS ===== */
+.elements-container pre,
+.elements-container [class*="CodeBlock"],
+.elements-container [class*="codeBlock"],
+.elements-container [class*="CodeViewer"] {
+  background-color: #1e293b !important;
+  border: 1px solid #475569 !important;
+  border-radius: 8px !important;
+  max-width: 100% !important;
+  overflow-x: auto !important;
+}
+
+.elements-container code {
+  background-color: #1e293b !important;
+  color: #f8fafc !important;
+  white-space: pre-wrap !important;
+  word-break: break-word !important;
+}
+
+/* Inline code */
+.elements-container :not(pre) > code {
+  background-color: #334155 !important;
+  color: #f8fafc !important;
+  padding: 2px 8px !important;
+  border-radius: 4px !important;
+  font-weight: 500 !important;
+}
+
+/* Code syntax highlighting */
+.elements-container .token.string {
+  color: #86efac !important;
+}
+
+.elements-container .token.number {
+  color: #fcd34d !important;
+}
+
+.elements-container .token.boolean {
+  color: #f472b6 !important;
+}
+
+.elements-container .token.property {
+  color: #93c5fd !important;
+}
+
+.elements-container .token.punctuation {
+  color: #94a3b8 !important;
+}
+
+/* ===== TRY IT PANEL - HIGH CONTRAST ===== */
+.elements-container [class*="TryIt"],
+.elements-container [class*="tryIt"],
+.elements-container [class*="RequestMaker"],
+.elements-container [class*="RequestSamples"] {
+  background-color: #1e293b !important;
+  border: 1px solid #475569 !important;
+  border-radius: 8px !important;
+}
+
+/* Try It Panel Headers */
+.elements-container [class*="TryIt"] > div:first-child,
+.elements-container [class*="RequestMaker"] > div:first-child,
+.elements-container [class*="Parameters"] {
+  background-color: #334155 !important;
+  border-bottom: 1px solid #475569 !important;
+  color: #ffffff !important;
+  font-weight: 600 !important;
+  padding: 12px 16px !important;
+}
+
+/* ===== FORM INPUTS - DARK & READABLE ===== */
+.elements-container input[type="text"],
+.elements-container input[type="email"],
+.elements-container input[type="password"],
+.elements-container input[type="number"],
+.elements-container input[type="url"],
+.elements-container input:not([type]),
+.elements-container textarea,
+.elements-container select,
+.elements-container [class*="Input"],
+.elements-container [class*="TextArea"],
+.elements-container [class*="Select"] {
+  background-color: #1e293b !important;
+  color: #f8fafc !important;
+  border: 2px solid #475569 !important;
+  border-radius: 6px !important;
+  padding: 10px 14px !important;
+  font-size: 0.9375rem !important;
+  font-weight: 400 !important;
+}
+
+.elements-container input:focus,
+.elements-container textarea:focus,
+.elements-container select:focus {
+  border-color: #60a5fa !important;
+  box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.25) !important;
+  outline: none !important;
+  background-color: #1e293b !important;
+}
+
+.elements-container input::placeholder,
+.elements-container textarea::placeholder {
+  color: #94a3b8 !important;
+  font-style: italic !important;
+}
+
+/* Parameter row labels */
+.elements-container [class*="ParameterRow"] label,
+.elements-container [class*="parameter"] label,
+.elements-container [class*="FormField"] label {
+  color: #ffffff !important;
+  font-weight: 600 !important;
+  font-size: 0.875rem !important;
+  margin-bottom: 6px !important;
+  display: block !important;
+}
+
+/* Parameter type hints (string, array, etc) */
+.elements-container [class*="type"],
+.elements-container [class*="Type"] {
+  color: #60a5fa !important;
+  font-weight: 500 !important;
+  font-size: 0.75rem !important;
+  text-transform: lowercase !important;
+}
+
+/* ===== BUTTONS ===== */
+.elements-container button {
+  border-radius: 6px !important;
+  font-weight: 600 !important;
+  padding: 10px 20px !important;
+  transition: all 0.15s ease !important;
+}
+
+/* Primary/Submit buttons - VERY VISIBLE */
+.elements-container button[type="submit"],
+.elements-container [class*="SendButton"],
+.elements-container [class*="send-button"],
+.elements-container button[class*="primary" i] {
+  background-color: #3b82f6 !important;
+  color: #ffffff !important;
+  border: none !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.05em !important;
+}
+
+.elements-container button[type="submit"]:hover,
+.elements-container [class*="SendButton"]:hover,
+.elements-container button[class*="primary" i]:hover {
+  background-color: #2563eb !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4) !important;
+}
+
+/* Secondary buttons */
+.elements-container button[class*="secondary" i],
+.elements-container button:not([type="submit"]):not([class*="primary"]) {
+  background-color: #334155 !important;
+  color: #f1f5f9 !important;
+  border: 1px solid #475569 !important;
+}
+
+.elements-container button[class*="secondary" i]:hover,
+.elements-container button:not([type="submit"]):not([class*="primary"]):hover {
+  background-color: #475569 !important;
+}
+
+/* ===== TABS ===== */
+.elements-container [role="tablist"] {
+  border-bottom: 2px solid #334155 !important;
+  background-color: transparent !important;
+}
+
+.elements-container [role="tab"] {
+  color: #94a3b8 !important;
+  background-color: transparent !important;
+  font-weight: 500 !important;
+  padding: 10px 16px !important;
+}
+
+.elements-container [role="tab"]:hover {
+  color: #f1f5f9 !important;
+}
+
+.elements-container [role="tab"][aria-selected="true"] {
+  color: #60a5fa !important;
+  border-bottom: 3px solid #60a5fa !important;
+  font-weight: 600 !important;
+}
+
+.elements-container [role="tabpanel"] {
+  background-color: #0f172a !important;
+}
+
+/* ===== RESPONSE PANEL ===== */
+.elements-container [class*="Response"],
+.elements-container [class*="response"] {
+  background-color: #1e293b !important;
+  border: 1px solid #475569 !important;
+  border-radius: 8px !important;
+}
+
+/* Response header */
+.elements-container [class*="Response"] > div:first-child {
+  background-color: #334155 !important;
+  border-bottom: 1px solid #475569 !important;
+  padding: 12px 16px !important;
+}
+
+/* Response Example header - HIGH CONTRAST */
+.elements-container [class*="ResponseExample"],
+.elements-container [class*="response-example"] {
+  color: #ffffff !important;
+  font-weight: 600 !important;
+}
+
+/* ===== SCHEMA/MODEL VIEWER ===== */
+.elements-container [class*="Schema"],
+.elements-container [class*="Model"],
+.elements-container [class*="Properties"] {
+  background-color: #1e293b !important;
+  border: 1px solid #475569 !important;
+  border-radius: 8px !important;
+  max-width: 100% !important;
+  overflow-x: auto !important;
+}
+
+/* Property row - responsive layout */
+.elements-container [class*="PropertyRow"],
+.elements-container [class*="property-row"] {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 8px !important;
+  padding: 12px 16px !important;
+  border-bottom: 1px solid #334155 !important;
+}
+
+/* Property names - BRIGHT */
+.elements-container [class*="property-name"],
+.elements-container [class*="PropertyName"] {
+  color: #ffffff !important;
+  font-weight: 600 !important;
+  word-break: break-word !important;
+}
+
+/* Property type badge */
+.elements-container [class*="PropertyType"],
+.elements-container [class*="property-type"] {
+  color: #60a5fa !important;
+  font-family: monospace !important;
+  font-size: 0.8125rem !important;
+}
+
+/* Required badge - VISIBLE */
+.elements-container [class*="required" i] {
+  color: #f87171 !important;
+  font-weight: 700 !important;
+  font-size: 0.75rem !important;
+  white-space: nowrap !important;
+}
+
+/* Property description */
+.elements-container [class*="PropertyDescription"],
+.elements-container [class*="property-description"] {
+  color: #cbd5e1 !important;
+  font-size: 0.875rem !important;
+  line-height: 1.5 !important;
+  flex-basis: 100% !important;
+}
+
+/* ===== TABLES ===== */
+.elements-container table {
+  background-color: #1e293b !important;
+  border: 1px solid #475569 !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  table-layout: auto !important;
+  border-collapse: collapse !important;
+}
+
+/* Table wrapper for horizontal scroll */
+.elements-container [class*="TableWrapper"],
+.elements-container [class*="table-wrapper"] {
+  overflow-x: auto !important;
+  max-width: 100% !important;
+}
+
+.elements-container th {
+  background-color: #334155 !important;
+  color: #ffffff !important;
+  font-weight: 600 !important;
+  border-color: #475569 !important;
+  padding: 12px 16px !important;
+  white-space: nowrap !important;
+}
+
+.elements-container td {
+  color: #e2e8f0 !important;
+  border-color: #475569 !important;
+  padding: 10px 16px !important;
+  word-break: break-word !important;
+}
+
+.elements-container tr:nth-child(even) {
+  background-color: #1e293b !important;
+}
+
+.elements-container tr:nth-child(odd) {
+  background-color: #0f172a !important;
+}
+
+.elements-container tr:hover {
+  background-color: #334155 !important;
+}
+
+/* ===== BADGES & LABELS ===== */
+.elements-container [class*="Badge"]:not([class*="Method"]),
+.elements-container [class*="badge"]:not([class*="method"]),
+.elements-container [class*="Tag"],
+.elements-container [class*="tag"] {
+  background-color: #334155 !important;
+  color: #f1f5f9 !important;
+  border: 1px solid #475569 !important;
+  font-weight: 500 !important;
+  padding: 4px 10px !important;
+  border-radius: 4px !important;
+}
+
+/* Security/Auth badges - AMBER HIGHLIGHT */
+.elements-container [class*="security" i],
+.elements-container [class*="auth" i],
+.elements-container [class*="Authorization"] {
+  background-color: rgba(245, 158, 11, 0.2) !important;
+  color: #fbbf24 !important;
+  border: 1px solid #f59e0b !important;
+  font-weight: 600 !important;
+}
+
+/* ===== DROPDOWNS & MENUS ===== */
+.elements-container [class*="Dropdown"],
+.elements-container [class*="Menu"],
+.elements-container [class*="Popover"],
+.elements-container [class*="dropdown"],
+.elements-container [class*="menu"]:not([class*="TableOfContents"]),
+.elements-container [class*="popover"] {
+  background-color: #1e293b !important;
+  border: 1px solid #475569 !important;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5) !important;
+  border-radius: 8px !important;
+}
+
+.elements-container [class*="MenuItem"],
+.elements-container [class*="menu-item"] {
+  color: #f1f5f9 !important;
+  padding: 10px 16px !important;
+}
+
+.elements-container [class*="MenuItem"]:hover,
+.elements-container [class*="menu-item"]:hover {
+  background-color: #334155 !important;
+}
+
+/* ===== DIVIDERS ===== */
+.elements-container hr,
+.elements-container [class*="Divider"],
+.elements-container [class*="divider"] {
+  border-color: #475569 !important;
+  background-color: #475569 !important;
+}
+
+/* ===== ICONS ===== */
+.elements-container svg {
+  color: currentColor !important;
+}
+
+/* Copy button icons */
+.elements-container [class*="copy"] svg,
+.elements-container [class*="Copy"] svg {
+  color: #94a3b8 !important;
+}
+
+.elements-container [class*="copy"]:hover svg,
+.elements-container [class*="Copy"]:hover svg {
+  color: #f1f5f9 !important;
+}
+
+/* ===== TOOLTIPS ===== */
+.elements-container [class*="Tooltip"],
+.elements-container [class*="tooltip"] {
+  background-color: #334155 !important;
+  color: #f8fafc !important;
+  border: 1px solid #475569 !important;
+  font-size: 0.875rem !important;
+  padding: 8px 12px !important;
+  border-radius: 6px !important;
+}
+
+/* ===== LOADING STATES ===== */
+.elements-container [class*="Skeleton"],
+.elements-container [class*="skeleton"],
+.elements-container [class*="Loading"],
+.elements-container [class*="loading"] {
+  background-color: #334155 !important;
+}
+
+/* ===== EXPAND/COLLAPSE ===== */
+.elements-container [class*="Collapse"],
+.elements-container [class*="Expand"],
+.elements-container details summary {
+  color: #e2e8f0 !important;
+  font-weight: 500 !important;
+}
+
+.elements-container [class*="Collapse"]:hover,
+.elements-container [class*="Expand"]:hover,
+.elements-container details summary:hover {
+  color: #60a5fa !important;
 }
 
 /* Custom focus styles */
 *:focus-visible {
-  outline: 2px solid #22d3ee;
+  outline: 2px solid #60a5fa;
   outline-offset: 2px;
 }
 

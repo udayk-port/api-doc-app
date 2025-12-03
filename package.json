@@ -9,11 +9,14 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@stoplight/elements": "^9.0.13",
+    "@tanstack/react-query": "^5.90.11",
     "axios": "^1.13.2",
     "mobx": "^6.15.0",
     "next": "16.0.6",
     "react": "19.2.0",
     "react-dom": "19.2.0",
+    "react-query": "^3.39.3",
     "redoc": "^2.5.2",
     "styled-components": "^6.1.19",
     "yaml": "^2.8.2"
