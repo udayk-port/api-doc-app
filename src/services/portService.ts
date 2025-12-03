@@ -86,6 +86,18 @@ interface ServiceSpec {
   sourceLabel: string;   // Display label for grouping in UI
 }
 
+// Lightweight metadata type - no schema, for initial page load
+interface ServiceMetadata {
+  service: {
+    identifier: string;
+    title: string;
+  };
+  specUrl?: string;           // URL to fetch spec from (if external)
+  embeddedSpec?: OpenAPISchema; // Embedded spec object (if stored in Port)
+  blueprintId: string;
+  sourceLabel: string;
+}
+
 // Cache for the schema
 let schemaCache: {
   schema: OpenAPISchema | null;
@@ -177,11 +189,18 @@ export async function fetchEntitiesWithSpecs(source: OpenAPISource): Promise<Ser
 
     // Filter entities that have the spec URL property
     const entities = response.data.entities || [];
+    
+    // Debug: log all property names from first entity
+    if (entities.length > 0) {
+      const allProps = Object.keys(entities[0].properties || {});
+      console.log(`[PortService] Available properties on '${blueprintId}': ${allProps.join(', ')}`);
+    }
+    
     const filtered = entities.filter((entity: ServiceEntity) => 
       entity.properties?.[property]
     );
     
-    console.log(`[PortService] Found ${filtered.length} entities with OpenAPI specs out of ${entities.length} total in blueprint '${blueprintId}'`);
+    console.log(`[PortService] Found ${filtered.length} entities with '${property}' out of ${entities.length} total in blueprint '${blueprintId}'`);
     return filtered;
   } catch (error) {
     console.error(`[PortService] Failed to fetch entities from blueprint '${blueprintId}':`, error);
@@ -200,9 +219,121 @@ export async function fetchServicesWithSpecs(): Promise<ServiceEntity[]> {
 }
 
 /**
+ * Extract spec info from a property value
+ * Returns either a URL string or an embedded OpenAPI spec object
+ */
+type SpecSource = 
+  | { type: 'url'; url: string }
+  | { type: 'embedded'; spec: OpenAPISchema }
+  | null;
+
+function extractSpecSource(value: unknown): SpecSource {
+  // Direct URL string
+  if (typeof value === 'string') {
+    return { type: 'url', url: value };
+  }
+  
+  if (typeof value === 'object' && value !== null) {
+    const obj = value as Record<string, unknown>;
+    
+    // Check if it's an embedded OpenAPI spec (has openapi/swagger and paths)
+    if (('openapi' in obj || 'swagger' in obj) && 'paths' in obj) {
+      console.log(`[PortService] Found embedded OpenAPI spec`);
+      return { type: 'embedded', spec: obj as unknown as OpenAPISchema };
+    }
+    
+    // Try common property names for URLs in objects
+    for (const key of ['url', 'spec_url', 'specUrl', 'value', 'href']) {
+      if (typeof obj[key] === 'string') {
+        return { type: 'url', url: obj[key] as string };
+      }
+    }
+    
+    console.warn(`[PortService] Could not extract spec from object. Keys: ${Object.keys(obj).join(', ')}`);
+  }
+  return null;
+}
+
+/**
+ * Fetch metadata only from a single source (no schema fetching)
+ * This is fast because it only lists entities, doesn't fetch their specs
+ */
+export async function fetchMetadataFromSource(source: OpenAPISource): Promise<ServiceMetadata[]> {
+  const { blueprintId, property, label } = source;
+  const sourceLabel = label || blueprintId;
+
+  const entities = await fetchEntitiesWithSpecs(source);
+  const results: ServiceMetadata[] = [];
+  
+  for (const entity of entities) {
+    const specSource = extractSpecSource(entity.properties[property]);
+    if (!specSource) continue;
+    
+    const metadata: ServiceMetadata = {
+      service: {
+        identifier: entity.identifier,
+        title: entity.title,
+      },
+      blueprintId,
+      sourceLabel,
+    };
+    
+    if (specSource.type === 'url') {
+      metadata.specUrl = specSource.url;
+    } else {
+      metadata.embeddedSpec = specSource.spec;
+    }
+    
+    results.push(metadata);
+  }
+  
+  return results;
+}
+
+/**
+ * Fetch metadata from all configured sources (no schema fetching)
+ * Much faster than fetchAllSources() - use for initial page load
+ */
+export async function fetchAllMetadata(): Promise<ServiceMetadata[]> {
+  const sources = config.openapi.sources;
+  console.log(`[PortService] Fetching metadata from ${sources.length} configured source(s)`);
+
+  const allMetadata: ServiceMetadata[] = [];
+
+  for (const source of sources) {
+    try {
+      const metadata = await fetchMetadataFromSource(source);
+      allMetadata.push(...metadata);
+    } catch (error) {
+      console.error(`[PortService] Failed to fetch metadata from source '${source.blueprintId}':`, error);
+    }
+  }
+
+  console.log(`[PortService] Total services found: ${allMetadata.length}`);
+  return allMetadata;
+}
+
+/**
+ * Group metadata by their source label
+ */
+export function groupMetadataBySource(metadata: ServiceMetadata[]): Record<string, ServiceMetadata[]> {
+  const grouped: Record<string, ServiceMetadata[]> = {};
+  
+  for (const item of metadata) {
+    const label = item.sourceLabel;
+    if (!grouped[label]) {
+      grouped[label] = [];
+    }
+    grouped[label].push(item);
+  }
+
+  return grouped;
+}
+
+/**
  * Fetch an OpenAPI spec from a URL
  */
-async function fetchSpecFromUrl(url: string): Promise<OpenAPISchema> {
+export async function fetchSpecFromUrl(url: string): Promise<OpenAPISchema> {
   const response = await axios.get(url, {
     headers: {
       Accept: 'application/json, application/yaml, text/yaml, */*',
@@ -551,4 +682,4 @@ export function clearSchemaCache(): void {
   console.log('[PortService] Schema cache cleared');
 }
 
-export type { OpenAPISchema, ApiEndpoint, OrganizedApis, PathItem, Operation, ServiceSpec, ServiceEntity };
+export type { OpenAPISchema, ApiEndpoint, OrganizedApis, PathItem, Operation, ServiceSpec, ServiceEntity, ServiceMetadata };

@@ -1,34 +1,31 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
-import type { ServiceSpec } from '@/services/portService';
+import type { ServiceMetadata } from '@/services/portService';
 
 interface SidebarProps {
-  serviceSpecs: ServiceSpec[];
-  grouped: Record<string, ServiceSpec[]>;
+  services: ServiceMetadata[];
+  grouped: Record<string, ServiceMetadata[]>;
   sourceLabels: string[];
-  onServiceSelect: (service: ServiceSpec | null) => void;
-  selectedService: ServiceSpec | null;
+  onServiceSelect: (service: ServiceMetadata | null) => void;
+  selectedService: ServiceMetadata | null;
 }
 
 // Collapsible group component
 function SourceGroup({
   label,
-  specs,
+  services,
   selectedService,
   onServiceSelect,
   defaultExpanded = true,
 }: {
   label: string;
-  specs: ServiceSpec[];
-  selectedService: ServiceSpec | null;
-  onServiceSelect: (service: ServiceSpec | null) => void;
+  services: ServiceMetadata[];
+  selectedService: ServiceMetadata | null;
+  onServiceSelect: (service: ServiceMetadata | null) => void;
   defaultExpanded?: boolean;
 }) {
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
-  
-  const availableCount = specs.filter(s => s.schema !== null && s.schema !== undefined).length;
-  const failedCount = specs.filter(s => s.error !== null && s.error !== undefined).length;
 
   return (
     <div className="mb-2">
@@ -48,63 +45,43 @@ function SourceGroup({
           </svg>
           <span className="font-medium text-sm text-white">{label}</span>
         </div>
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-slate-400">
-            {availableCount}
-            {failedCount > 0 && (
-              <span className="text-red-400 ml-1">({failedCount} failed)</span>
-            )}
-          </span>
-        </div>
+        <span className="text-xs text-slate-400">{services.length}</span>
       </button>
 
       {/* Group Items */}
       {isExpanded && (
         <div className="mt-1 ml-2 pl-2 border-l border-slate-700 space-y-1">
-          {specs.length === 0 ? (
+          {services.length === 0 ? (
             <div className="text-xs text-slate-500 py-2 px-2">
               No APIs in this group
             </div>
           ) : (
-            specs.map((spec) => (
-              <button
-                key={`${spec.blueprintId}-${spec.service.identifier}`}
-                onClick={() => onServiceSelect(spec)}
-                className={`w-full text-left p-2 rounded-md transition-colors ${
-                  selectedService?.service.identifier === spec.service.identifier &&
-                  selectedService?.blueprintId === spec.blueprintId
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-slate-800/30 text-slate-300 hover:bg-slate-700/50'
-                }`}
-              >
-                <div className="flex items-center gap-2">
-                  <span className="text-sm truncate">{spec.service.title}</span>
-                  {spec.schema && (
-                    <span className={`text-xs px-1 py-0.5 rounded flex-shrink-0 ${
-                      selectedService?.service.identifier === spec.service.identifier &&
-                      selectedService?.blueprintId === spec.blueprintId
-                        ? 'bg-blue-500/50'
-                        : 'bg-green-600/20 text-green-400'
-                    }`}>
-                      ✓
-                    </span>
-                  )}
-                  {spec.error && (
-                    <span className="text-xs text-red-400 flex-shrink-0">⚠️</span>
-                  )}
-                </div>
-                {spec.schema && (
-                  <div className={`text-xs mt-0.5 truncate ${
-                    selectedService?.service.identifier === spec.service.identifier &&
-                    selectedService?.blueprintId === spec.blueprintId
-                      ? 'opacity-75'
-                      : 'text-slate-500'
-                  }`}>
-                    {spec.schema.info.title} v{spec.schema.info.version}
+            services.map((service) => {
+              const isSelected = 
+                selectedService?.service.identifier === service.service.identifier &&
+                selectedService?.blueprintId === service.blueprintId;
+              
+              return (
+                <button
+                  key={`${service.blueprintId}-${service.service.identifier}`}
+                  onClick={() => onServiceSelect(service)}
+                  className={`w-full text-left p-2 rounded-md transition-colors ${
+                    isSelected
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-slate-800/30 text-slate-300 hover:bg-slate-700/50'
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm truncate flex-1">{service.service.title}</span>
                   </div>
-                )}
-              </button>
-            ))
+                  <div className={`text-xs mt-0.5 truncate ${
+                    isSelected ? 'opacity-75' : 'text-slate-500'
+                  }`}>
+                    {service.service.identifier}
+                  </div>
+                </button>
+              );
+            })
           )}
         </div>
       )}
@@ -113,7 +90,7 @@ function SourceGroup({
 }
 
 export default function Sidebar({
-  serviceSpecs,
+  services,
   grouped,
   sourceLabels,
   onServiceSelect,
@@ -121,20 +98,19 @@ export default function Sidebar({
 }: SidebarProps) {
   const [searchTerm, setSearchTerm] = useState('');
 
-  // Filter specs based on search term across all groups
+  // Filter services based on search term across all groups
   const filteredGrouped = useMemo(() => {
     if (!searchTerm.trim()) {
       return grouped;
     }
 
     const term = searchTerm.toLowerCase();
-    const result: Record<string, ServiceSpec[]> = {};
+    const result: Record<string, ServiceMetadata[]> = {};
 
-    for (const [label, specs] of Object.entries(grouped)) {
-      const filtered = specs.filter(spec =>
-        spec.service.title.toLowerCase().includes(term) ||
-        spec.schema?.info?.title?.toLowerCase().includes(term) ||
-        spec.service.identifier.toLowerCase().includes(term)
+    for (const [label, groupServices] of Object.entries(grouped)) {
+      const filtered = groupServices.filter(service =>
+        service.service.title.toLowerCase().includes(term) ||
+        service.service.identifier.toLowerCase().includes(term)
       );
       if (filtered.length > 0) {
         result[label] = filtered;
@@ -145,8 +121,7 @@ export default function Sidebar({
   }, [grouped, searchTerm]);
 
   const filteredLabels = Object.keys(filteredGrouped);
-  const totalCount = serviceSpecs.length;
-  const availableCount = serviceSpecs.filter(s => s.schema !== null && s.schema !== undefined).length;
+  const totalCount = services.length;
 
   return (
     <aside className="w-72 bg-slate-900 border-r border-slate-700 h-full flex flex-col">
@@ -154,7 +129,7 @@ export default function Sidebar({
       <div className="p-4 border-b border-slate-700">
         <h2 className="text-lg font-semibold text-white mb-1">API Documentation</h2>
         <p className="text-xs text-slate-500 mb-3">
-          {sourceLabels.length} source{sourceLabels.length !== 1 ? 's' : ''} · {availableCount} of {totalCount} available
+          {sourceLabels.length} source{sourceLabels.length !== 1 ? 's' : ''} · {totalCount} API{totalCount !== 1 ? 's' : ''}
         </p>
         <div className="relative">
           <input
@@ -207,7 +182,7 @@ export default function Sidebar({
             <SourceGroup
               key={label}
               label={label}
-              specs={filteredGrouped[label]}
+              services={filteredGrouped[label]}
               selectedService={selectedService}
               onServiceSelect={onServiceSelect}
               defaultExpanded={index === 0} // First group expanded by default

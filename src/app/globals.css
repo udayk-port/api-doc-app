@@ -58,9 +58,16 @@ body {
 }
 
 /* Method badges */
-.redoc-container .http-verb {
+.redoc-container .http-verb,
+.redoc-container [class*="operation-type"] {
   font-weight: 600;
   text-transform: uppercase;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  vertical-align: middle !important;
+  min-height: 1.5em !important;
+  line-height: 1 !important;
 }
 
 /* Search highlight */

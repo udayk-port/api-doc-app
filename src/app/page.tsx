@@ -1,38 +1,48 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Sidebar from '@/components/Sidebar';
 import ApiDocViewer from '@/components/ApiDocViewer';
 import LoadingState from '@/components/LoadingState';
-import type { ServiceSpec } from '@/services/portService';
+import type { ServiceMetadata, OpenAPISchema } from '@/services/portService';
 import type { OpenAPISource } from '@/lib/config';
 
 interface ApiResponse {
   config: {
     sources: OpenAPISource[];
   };
-  services: ServiceSpec[];
-  grouped: Record<string, ServiceSpec[]>;
+  services: ServiceMetadata[];
+  grouped: Record<string, ServiceMetadata[]>;
   sourceLabels: string[];
   count: number;
-  available: number;
-  failed: number;
+}
+
+// Extended metadata with loaded schema
+interface LoadedService extends ServiceMetadata {
+  schema?: OpenAPISchema;
+  error?: string;
+  isLoading?: boolean;
 }
 
 export default function Home() {
-  const [serviceSpecs, setServiceSpecs] = useState<ServiceSpec[]>([]);
-  const [grouped, setGrouped] = useState<Record<string, ServiceSpec[]>>({});
+  const [services, setServices] = useState<ServiceMetadata[]>([]);
+  const [grouped, setGrouped] = useState<Record<string, ServiceMetadata[]>>({});
   const [sourceLabels, setSourceLabels] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedService, setSelectedService] = useState<ServiceSpec | null>(null);
+  
+  // Selected service with its loaded schema
+  const [selectedService, setSelectedService] = useState<ServiceMetadata | null>(null);
+  const [loadedSchema, setLoadedSchema] = useState<OpenAPISchema | null>(null);
+  const [schemaLoading, setSchemaLoading] = useState(false);
+  const [schemaError, setSchemaError] = useState<string | null>(null);
 
-  // Fetch service specs on mount
+  // Fetch service metadata on mount (fast - no schemas)
   useEffect(() => {
-    fetchServiceSpecs();
+    fetchServiceMetadata();
   }, []);
 
-  const fetchServiceSpecs = async () => {
+  const fetchServiceMetadata = async () => {
     try {
       setLoading(true);
       setError(null);
@@ -40,28 +50,75 @@ export default function Home() {
       const response = await fetch('/api/port/schemas');
       
       if (!response.ok) {
-        throw new Error(`Failed to fetch service specs: ${response.statusText}`);
+        throw new Error(`Failed to fetch service metadata: ${response.statusText}`);
       }
 
       const data: ApiResponse = await response.json();
-      setServiceSpecs(data.services || []);
+      setServices(data.services || []);
       setGrouped(data.grouped || {});
       setSourceLabels(data.sourceLabels || []);
-
-      // Auto-select first service with a valid schema
-      if (data.services && data.services.length > 0) {
-        const firstWithSchema = data.services.find((s: ServiceSpec) => s.schema !== null && s.schema !== undefined);
-        if (firstWithSchema) {
-          setSelectedService(firstWithSchema);
-        }
-      }
     } catch (err) {
-      console.error('Error fetching service specs:', err);
+      console.error('Error fetching service metadata:', err);
       setError(err instanceof Error ? err.message : 'Failed to load API documentation');
     } finally {
       setLoading(false);
     }
   };
+
+  // Fetch spec on-demand when a service is selected
+  const fetchSpec = useCallback(async (service: ServiceMetadata) => {
+    setSchemaLoading(true);
+    setSchemaError(null);
+    setLoadedSchema(null);
+
+    try {
+      // If the spec is embedded directly in the entity, use it
+      if (service.embeddedSpec) {
+        console.log('Using embedded spec for', service.service.title);
+        setLoadedSchema(service.embeddedSpec);
+        return;
+      }
+      
+      // Otherwise fetch from URL
+      if (!service.specUrl) {
+        throw new Error('No spec URL or embedded spec available');
+      }
+      
+      const response = await fetch(`/api/port/spec?url=${encodeURIComponent(service.specUrl)}`);
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.details || `Failed to fetch spec: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      
+      // Check if spec is too large to render
+      if (data.tooLarge || data.error) {
+        setSchemaError(data.error || 'Spec is too large to render');
+        return;
+      }
+      
+      setLoadedSchema(data.schema);
+    } catch (err) {
+      console.error('Error fetching spec:', err);
+      setSchemaError(err instanceof Error ? err.message : 'Failed to load spec');
+    } finally {
+      setSchemaLoading(false);
+    }
+  }, []);
+
+  // Handle service selection
+  const handleServiceSelect = useCallback((service: ServiceMetadata | null) => {
+    // Clear previous schema when switching
+    setLoadedSchema(null);
+    setSchemaError(null);
+    setSelectedService(service);
+    
+    if (service) {
+      fetchSpec(service);
+    }
+  }, [fetchSpec]);
 
   if (loading) {
     return (
@@ -83,7 +140,7 @@ export default function Home() {
           <h2 className="text-xl font-semibold text-white mb-2">Failed to Load Documentation</h2>
           <p className="text-slate-400 mb-4">{error}</p>
           <button
-            onClick={fetchServiceSpecs}
+            onClick={fetchServiceMetadata}
             className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
           >
             Try Again
@@ -97,10 +154,10 @@ export default function Home() {
     <div className="h-screen bg-slate-950 flex">
       {/* Sidebar with grouped data */}
       <Sidebar
-        serviceSpecs={serviceSpecs}
+        services={services}
         grouped={grouped}
         sourceLabels={sourceLabels}
-        onServiceSelect={setSelectedService}
+        onServiceSelect={handleServiceSelect}
         selectedService={selectedService}
       />
 
@@ -111,21 +168,21 @@ export default function Home() {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-xl font-semibold text-white">
-                {selectedService?.schema?.info.title || selectedService?.service.title || 'API Documentation'}
+                {loadedSchema?.info.title || selectedService?.service.title || 'API Documentation'}
               </h1>
               <p className="text-sm text-slate-400 mt-1">
-                {selectedService?.schema?.info.description || 
+                {loadedSchema?.info.description || 
                  (selectedService ? `API documentation for ${selectedService.service.title}` : 'Select a service to view its API documentation')}
               </p>
             </div>
             <div className="flex items-center gap-4">
-              {selectedService?.schema && (
+              {loadedSchema && (
                 <span className="px-3 py-1 bg-blue-600/20 text-blue-400 text-sm rounded-full">
-                  v{selectedService.schema.info.version}
+                  v{loadedSchema.info.version}
                 </span>
               )}
               <button
-                onClick={fetchServiceSpecs}
+                onClick={fetchServiceMetadata}
                 className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors"
                 title="Refresh"
               >
@@ -143,18 +200,28 @@ export default function Home() {
                 <span className="text-sm text-slate-500">Blueprint:</span>
                 <span className="text-sm text-cyan-400 font-medium">{selectedService.sourceLabel}</span>
               </div>
-              <span className="text-slate-600">|</span>
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-slate-500">Spec:</span>
-                <a
-                  href={selectedService.specUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-sm text-blue-400 hover:underline truncate max-w-sm"
-                >
-                  {selectedService.specUrl}
-                </a>
-              </div>
+              {selectedService.specUrl && (
+                <>
+                  <span className="text-slate-600">|</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-slate-500">Spec:</span>
+                    <a
+                      href={selectedService.specUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm text-blue-400 hover:underline truncate max-w-sm"
+                    >
+                      {selectedService.specUrl}
+                    </a>
+                  </div>
+                </>
+              )}
+              {selectedService.embeddedSpec && !selectedService.specUrl && (
+                <>
+                  <span className="text-slate-600">|</span>
+                  <span className="text-sm text-slate-500">Embedded spec</span>
+                </>
+              )}
             </div>
           )}
         </header>
@@ -186,7 +253,11 @@ export default function Home() {
                 </p>
               </div>
             </div>
-          ) : selectedService && !selectedService.schema ? (
+          ) : schemaLoading ? (
+            <div className="h-full flex items-center justify-center">
+              <LoadingState message={`Loading ${selectedService.service.title}...`} />
+            </div>
+          ) : schemaError ? (
             <div className="h-full flex items-center justify-center">
               <div className="text-center p-8">
                 <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-red-500/10 flex items-center justify-center">
@@ -198,25 +269,35 @@ export default function Home() {
                   Failed to Load Spec
                 </h2>
                 <p className="text-slate-400 max-w-md mb-4">
-                  {selectedService.error || 'Unable to fetch the OpenAPI specification for this service.'}
+                  {schemaError}
                 </p>
-                <a
-                  href={selectedService.specUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-blue-400 hover:underline text-sm"
-                >
-                  View spec URL →
-                </a>
+                <div className="flex gap-3 justify-center">
+                  <button
+                    onClick={() => fetchSpec(selectedService)}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  >
+                    Retry
+                  </button>
+                  {selectedService.specUrl && (
+                    <a
+                      href={selectedService.specUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-4 py-2 border border-slate-600 text-slate-300 rounded-lg hover:bg-slate-800 transition-colors"
+                    >
+                      View spec URL →
+                    </a>
+                  )}
+                </div>
               </div>
             </div>
-          ) : selectedService?.schema ? (
-            <ApiDocViewer spec={selectedService.schema} />
-          ) : (
-            <div className="h-full flex items-center justify-center">
-              <LoadingState message="Preparing documentation..." />
-            </div>
-          )}
+          ) : loadedSchema ? (
+            // Key prop forces Redoc to unmount/remount cleanly when switching APIs
+            <ApiDocViewer 
+              key={`${selectedService.blueprintId}-${selectedService.service.identifier}`}
+              spec={loadedSchema} 
+            />
+          ) : null}
         </div>
       </main>
     </div>
