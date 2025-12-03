@@ -166,12 +166,15 @@ export async function fetchPortSchema(): Promise<OpenAPISchema> {
 
 /**
  * Fetch entities from a specific blueprint that have OpenAPI specs
+ * @param source - The OpenAPI source configuration
+ * @param userToken - Optional user-provided token (overrides server credentials)
  */
-export async function fetchEntitiesWithSpecs(source: OpenAPISource): Promise<ServiceEntity[]> {
+export async function fetchEntitiesWithSpecs(source: OpenAPISource, userToken?: string): Promise<ServiceEntity[]> {
   const { blueprintId, property } = source;
 
   try {
-    const token = await tokenManager.getToken();
+    // Use user-provided token if available, otherwise get from tokenManager
+    const token = userToken || await tokenManager.getToken();
     const baseUrl = getPortApiUrl();
 
     console.log(`[PortService] Fetching entities from blueprint '${blueprintId}' with property '${property}'`);
@@ -257,12 +260,14 @@ function extractSpecSource(value: unknown): SpecSource {
 /**
  * Fetch metadata only from a single source (no schema fetching)
  * This is fast because it only lists entities, doesn't fetch their specs
+ * @param source - The OpenAPI source configuration
+ * @param userToken - Optional user-provided token (overrides server credentials)
  */
-export async function fetchMetadataFromSource(source: OpenAPISource): Promise<ServiceMetadata[]> {
+export async function fetchMetadataFromSource(source: OpenAPISource, userToken?: string): Promise<ServiceMetadata[]> {
   const { blueprintId, property, label } = source;
   const sourceLabel = label || blueprintId;
 
-  const entities = await fetchEntitiesWithSpecs(source);
+  const entities = await fetchEntitiesWithSpecs(source, userToken);
   const results: ServiceMetadata[] = [];
   
   for (const entity of entities) {
@@ -293,16 +298,17 @@ export async function fetchMetadataFromSource(source: OpenAPISource): Promise<Se
 /**
  * Fetch metadata from all configured sources (no schema fetching)
  * Much faster than fetchAllSources() - use for initial page load
+ * @param userToken - Optional user-provided token (overrides server credentials)
  */
-export async function fetchAllMetadata(): Promise<ServiceMetadata[]> {
+export async function fetchAllMetadata(userToken?: string): Promise<ServiceMetadata[]> {
   const sources = config.openapi.sources;
-  console.log(`[PortService] Fetching metadata from ${sources.length} configured source(s)`);
+  console.log(`[PortService] Fetching metadata from ${sources.length} configured source(s)${userToken ? ' (using user token)' : ''}`);
 
   const allMetadata: ServiceMetadata[] = [];
 
   for (const source of sources) {
     try {
-      const metadata = await fetchMetadataFromSource(source);
+      const metadata = await fetchMetadataFromSource(source, userToken);
       allMetadata.push(...metadata);
     } catch (error) {
       console.error(`[PortService] Failed to fetch metadata from source '${source.blueprintId}':`, error);

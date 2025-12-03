@@ -4,8 +4,13 @@ import { useState, useEffect, useCallback } from 'react';
 import Sidebar from '@/components/Sidebar';
 import ApiDocViewer from '@/components/ApiDocViewer';
 import LoadingState from '@/components/LoadingState';
+import AuthBar from '@/components/AuthBar';
+import { useAuth } from '@/context/AuthContext';
 import type { ServiceMetadata, OpenAPISchema } from '@/services/portService';
 import type { OpenAPISource } from '@/lib/config';
+
+// Check if user auth is enabled (this will be hydrated from server)
+const ENABLE_USER_AUTH = process.env.NEXT_PUBLIC_ENABLE_USER_AUTH === 'true';
 
 interface ApiResponse {
   config: {
@@ -25,6 +30,7 @@ interface LoadedService extends ServiceMetadata {
 }
 
 export default function Home() {
+  const { token } = useAuth();
   const [services, setServices] = useState<ServiceMetadata[]>([]);
   const [grouped, setGrouped] = useState<Record<string, ServiceMetadata[]>>({});
   const [sourceLabels, setSourceLabels] = useState<string[]>([]);
@@ -37,17 +43,24 @@ export default function Home() {
   const [schemaLoading, setSchemaLoading] = useState(false);
   const [schemaError, setSchemaError] = useState<string | null>(null);
 
-  // Fetch service metadata on mount (fast - no schemas)
-  useEffect(() => {
-    fetchServiceMetadata();
-  }, []);
+  // Build headers with optional auth token
+  const getHeaders = useCallback((): HeadersInit => {
+    const headers: HeadersInit = {};
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+    return headers;
+  }, [token]);
 
-  const fetchServiceMetadata = async () => {
+  // Fetch service metadata
+  const fetchServiceMetadata = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
 
-      const response = await fetch('/api/port/schemas');
+      const response = await fetch('/api/port/schemas', {
+        headers: getHeaders(),
+      });
       
       if (!response.ok) {
         throw new Error(`Failed to fetch service metadata: ${response.statusText}`);
@@ -63,7 +76,12 @@ export default function Home() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [getHeaders]);
+
+  // Fetch service metadata on mount and when auth changes
+  useEffect(() => {
+    fetchServiceMetadata();
+  }, [fetchServiceMetadata]);
 
   // Fetch spec on-demand when a service is selected
   const fetchSpec = useCallback(async (service: ServiceMetadata) => {
@@ -163,6 +181,11 @@ export default function Home() {
 
       {/* Main Content */}
       <main className="flex-1 flex flex-col min-h-0">
+        {/* User Auth Bar (when enabled) */}
+        {ENABLE_USER_AUTH && (
+          <AuthBar />
+        )}
+        
         {/* Header */}
         <header className="bg-slate-900 border-b border-slate-700 px-6 py-4">
           <div className="flex items-center justify-between">

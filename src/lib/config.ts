@@ -80,6 +80,13 @@ export const config = {
     name: 'Port API Documentation',
     version: '1.0.0',
   },
+
+  // User authentication settings
+  auth: {
+    // Enable user-provided token authentication (alternative to server .env credentials)
+    // Note: Also set NEXT_PUBLIC_ENABLE_USER_AUTH=true for client-side
+    enableUserAuth: process.env.ENABLE_USER_AUTH === 'true',
+  },
 };
 
 /**

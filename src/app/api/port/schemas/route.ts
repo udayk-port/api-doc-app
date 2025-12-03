@@ -4,14 +4,28 @@
  * Schemas are fetched on-demand via /api/port/spec
  */
 
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { fetchAllMetadata, groupMetadataBySource, type ServiceMetadata } from '@/services/portService';
 import { config } from '@/lib/config';
 
-export async function GET() {
+/**
+ * Extract Bearer token from Authorization header
+ */
+function extractBearerToken(request: NextRequest): string | undefined {
+  const authHeader = request.headers.get('Authorization');
+  if (authHeader?.startsWith('Bearer ')) {
+    return authHeader.substring(7);
+  }
+  return undefined;
+}
+
+export async function GET(request: NextRequest) {
   try {
+    // Check for user-provided token in Authorization header
+    const userToken = extractBearerToken(request);
+    
     // Fetch metadata only (no schemas) - this is fast
-    const allMetadata = await fetchAllMetadata();
+    const allMetadata = await fetchAllMetadata(userToken);
     
     // Group by source label for organized display
     const grouped = groupMetadataBySource(allMetadata);
@@ -48,10 +62,13 @@ export async function GET() {
 }
 
 // POST endpoint for refreshing cache
-export async function POST() {
+export async function POST(request: NextRequest) {
   try {
+    // Check for user-provided token in Authorization header
+    const userToken = extractBearerToken(request);
+    
     // Note: metadata fetching doesn't use the spec cache, so this just re-fetches
-    const allMetadata = await fetchAllMetadata();
+    const allMetadata = await fetchAllMetadata(userToken);
     const grouped = groupMetadataBySource(allMetadata);
     
     return NextResponse.json({
