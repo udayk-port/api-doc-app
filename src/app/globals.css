@@ -645,6 +645,35 @@ body {
   font-weight: 600 !important;
 }
 
+/* Inline value badges (like "10", counts, limits) - HIGH CONTRAST */
+.elements-container .sl-bg-canvas-tint,
+.elements-container [class*="sl-bg-canvas-tint"] {
+  background-color: #334155 !important;
+  border-color: #64748b !important;
+}
+
+.elements-container .sl-text-muted,
+.elements-container [class*="sl-text-muted"] {
+  color: #e2e8f0 !important;
+}
+
+/* Small inline badges/pills - more readable */
+.elements-container span.sl-rounded.sl-border,
+.elements-container span[class*="sl-bg-canvas-tint"][class*="sl-rounded"] {
+  background-color: #475569 !important;
+  color: #f8fafc !important;
+  border-color: #64748b !important;
+  font-weight: 600 !important;
+  padding: 2px 8px !important;
+}
+
+/* Numeric values in badges - cyan accent for visibility */
+.elements-container span.sl-rounded.sl-border:not(:empty) {
+  background-color: rgba(34, 211, 238, 0.15) !important;
+  color: #67e8f9 !important;
+  border-color: #22d3ee !important;
+}
+
 /* ===== DROPDOWNS & MENUS ===== */
 .elements-container [class*="Dropdown"],
 .elements-container [class*="Menu"],
