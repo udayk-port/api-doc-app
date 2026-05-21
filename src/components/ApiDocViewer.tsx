@@ -85,7 +85,7 @@ export function ApiDocViewer({ specUrl, spec, className = '' }: ApiDocViewerProp
         const elementsModule = await import('@stoplight/elements');
         
         // Import styles
-        // @ts-expect-error - CSS import
+        // @ts-ignore - CSS import may not have type declarations
         await import('@stoplight/elements/styles.min.css');
         
         setElementsAPI(() => elementsModule.API);
